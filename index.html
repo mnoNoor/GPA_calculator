@@ -1,314 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPA Calculator</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(#88dfff, #37b9ff);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 700px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-        }
-
-        .header {
-            background: #4a69bd;
-            color: white;
-            padding: 25px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-
-        .courses-container {
-            background-color: #f8f9ff;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-
-        .courses-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .btn-add {
-            background: #4a69bd;
-            color: white;
-        }
-
-        .btn-add:hover {
-            background: #274db4;
-        }
-
-        .btn-remove {
-            background: #ff6b6b;
-            color: white;
-        }
-        
-        .btn-remove:hover{
-            background: #ff2f2f
-        }
-
-        .courses-list {
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-
-        .course {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1.5fr auto;
-            gap: 12px;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #e6e9ff;
-        }
-
-        .course:last-child {
-            border-bottom: none;
-        }
-
-        .course input, .course select {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            width: 100%;
-        }
-
-        .course input:focus, .course select:focus {
-            outline: none;
-            border-color: #4a69bd;
-        }
-
-        .remove-btn {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .remove-btn:hover {
-            background: #ff3f3f;
-        }
-
-        .results-section {
-            background: #4a69bd;
-            border-radius: 12px;
-            padding: 25px;
-            color: white;
-            text-align: center;
-        }
-
-        .results-content {
-            display: flex;
-            justify-content: space-around;
-        }
-
-        .result-item h3 {
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin-bottom: 10px;
-        }
-
-        .result-value {
-            font-size: 2.2rem;
-            font-weight: 700;
-        }
-
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css"/>
+  <title>GPA Calculator</title>
 </head>
 <body>
-    <!--Header-->
-    <div class="container">
-        <div class="header">
-            <h1>GPA Calculator</h1>
-        </div>
-        <!--Here the courses are going to appear-->
-        <div class="courses-container">
-            <div class="courses-header">
-                <button id="addBut" class="btn btn-add">Add Course</button>
-                <button id="removeAllBut" class="btn btn-remove">Remove All</button>
-            </div>
-                
-            <div class="courses-list" id="courses"></div>
-        </div>
-        
-        <!--The results-->
-        <div class="results-section">
-            <div class="results-content">
-                <div class="result-item">
-                    <h3>Total Credits</h3>
-                    <div class="result-value" id="totalCredits">0</div>
-                </div>
-                <div class="result-item">
-                    <h3>Your GPA</h3>
-                    <div class="result-value" id="gpaValue">0.00</div>
-                </div>
-            </div>
-            
-        </div>
+  <div class="container">
+    <!-- Header with previous-record inputs -->
+    <div class="header">
+      <h1>GPA Calculator</h1>
+      <div class="prev-records">
+        <input type="number" id="prevGPA" placeholder="Previous GPA" min="0" max="4" step="0.01"/>
+        <input type="number" id="prevCredits" placeholder="Previous Credits" min="0" step="1"/>
+      </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const addButton = document.getElementById("addBut");
-            const removeAllButton = document.getElementById("removeAllBut");
-            const coursesDiv = document.getElementById("courses");
-            const totalCreditsEl = document.getElementById("totalCredits");
-            const gpaValueEl = document.getElementById("gpaValue");
-            
-            const courseCredits = {
-                CS111: 4, MATH101: 4, ENGL101: 3, PHYS101: 4, GIAS: 3,
-                CS112: 4, MATH102: 4, PHYS102: 4, ENGL102: 3, ENGL201: 3,
-                CS351: 4, CS201: 3, CS211: 4, MATH201: 3, MATH202: 3,
-                STAT232: 3, CS224: 3, SE262: 3, GHAL: 3, MATH204: 3,
-                CS221: 4, SE464: 3, SE311: 3, SE323: 4, SE342: 3,
-                CS232: 4, SE463: 3, SE324: 3, SE372: 3, SE394: 1,
-                SE491: 3, SE431: 3, SE492: 3, GSOS: 3, SE472: 3
-            };
-            
-            // Add a new Course
-            addButton.addEventListener("click", () => {
-                addCourse();
-            });
-            
-            // Remove all courses
-            removeAllButton.addEventListener("click", () => {
-                coursesDiv.innerHTML = '';
-                updateResult();
-            });
-            
-            // Add first course automatically
-            addCourse();
-            
-            function addCourse() {
-                const newDiv = document.createElement("div");
-                newDiv.classList.add("course");
-                
-                newDiv.innerHTML = `
-                    <input type="text" list="courses_name" class="course-name" placeholder="Course">
-                    <input type="number" class="credits-input" min="1" step="1" placeholder="Credits">
-                    <select class="grade">
-                        <option value="" disabled selected>Grade</option>
-                        <option value="4.00">A+</option>
-                        <option value="3.75">A</option>
-                        <option value="3.50">B+</option>
-                        <option value="3.00">B</option>
-                        <option value="2.50">C+</option>
-                        <option value="2.00">C</option>
-                        <option value="1.00">D</option>
-                        <option value="0.00">F</option>
-                    </select>
-                    <button type="button" class="remove-btn">×</button>
-                `;
-                
-                coursesDiv.appendChild(newDiv);
-                
-                // Create datalist if it doesn't exist
-                if (!document.getElementById('courses_name')) {
-                    const datalist = document.createElement('datalist');
-                    datalist.id = 'courses_name';
-                    Object.keys(courseCredits).forEach(course => {
-                        const option = document.createElement('option');
-                        option.value = course;
-                        datalist.appendChild(option);
-                    });
-                    document.body.appendChild(datalist);
-                }
-                
-                // Remove a course when cleck remove button
-                const removeButton = newDiv.querySelector(".remove-btn");
-                removeButton.addEventListener("click", () => {
-                    newDiv.remove();
-                    updateResult();
-                });
-                
-                const gradeInput = newDiv.querySelector(".grade");
-                const courseNameInput = newDiv.querySelector(".course-name");
-                const creditsInput = newDiv.querySelector(".credits-input");
-                
-                gradeInput.addEventListener("change", updateResult);
-                
-                courseNameInput.addEventListener("input", () => {
-                    const courseName = courseNameInput.value.toUpperCase();
-                    if (courseCredits[courseName]) {
-                        creditsInput.value = courseCredits[courseName];
-                    }
-                    updateResult();
-                });
-                
-                creditsInput.addEventListener("input", updateResult);
-            }
-            
-            // Updates the GPA and total credits
-            function updateResult() {
-                let totalPoints = 0;
-                let totalCredits = 0;
-                
-                document.querySelectorAll(".course").forEach(course => {
-                    const creditInput = course.querySelector(".credits-input");
-                    const gradeSelect = course.querySelector(".grade");
-                    
-                    const credits = parseFloat(creditInput.value);
-                    const grade = parseFloat(gradeSelect.value);
-                    
-                    if (!isNaN(credits) && !isNaN(grade) && credits > 0 && gradeSelect.value !== "") {
-                        totalPoints += credits * grade;
-                        totalCredits += credits;
-                    }
-                });
-                
-                const gpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : 0.00;
-                
-                totalCreditsEl.textContent = totalCredits;
-                gpaValueEl.textContent = gpa;
-            }
-        });
-    </script>
+    <!-- Courses list -->
+    <div class="courses-container">
+      <div class="courses-header">
+        <button id="addBut" class="btn btn-add">Add Course</button>
+        <button id="removeAllBut" class="btn btn-remove-all">Remove All</button>
+      </div>
+      <div class="courses-list" id="courses"></div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section">
+      <div class="results-content">
+        <div class="result-item">
+          <h3>New Total Credits</h3>
+          <div class="result-value" id="totalCredits">0</div>
+        </div>
+        <div class="result-item">
+          <h3>New GPA</h3>
+          <div class="result-value" id="gpaValue">0.00</div>
+        </div>
+        <div class="result-item">
+          <h3>Combined GPA</h3>
+          <div class="result-value" id="combinedGPA">0.00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
