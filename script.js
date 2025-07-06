@@ -5,7 +5,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const totalCreditsEl = document.getElementById("totalCredits");
   const gpaValueEl = document.getElementById("gpaValue");
   const combinedGPAEl = document.getElementById("combinedGPA");
+  const prevGPAElm = document.querySelector("#prevGPA");
+  const prevCredits = document.querySelector("#prevCredits");
 
+  // Your map of course codes → credit values
   const courseCredits = {
     CS111: 4,
     MATH101: 4,
@@ -44,18 +47,20 @@ document.addEventListener("DOMContentLoaded", function () {
     SE472: 3,
   };
 
-  // Add first course automatically
-  addCourse();
 
-  addButton.addEventListener("click", () => {
-    addCourse();
-  });
+   // Create and append datalist if it doesn't
+  function ensureCourseDatalist(courseCredits) {
+    if (document.getElementById("courses_name")) return;
 
-  removeAllButton.addEventListener("click", () => {
-    coursesDiv.innerHTML = "";
-    updateResult();
-    addCourse();
-  });
+    const datalist = document.createElement("datalist");
+    datalist.id = "courses_name";
+    Object.keys(courseCredits).forEach((course) => {
+      const option = document.createElement("option");
+      option.value = course;
+      datalist.appendChild(option);
+    });
+    document.body.appendChild(datalist);
+  }
 
   function addCourse() {
     const newDiv = document.createElement("div");
@@ -80,24 +85,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     coursesDiv.appendChild(newDiv);
 
-     // Create datalist if it doesn't exist
-    if (!document.getElementById("courses_name")) {
-      const datalist = document.createElement("datalist");
-      datalist.id = "courses_name";
-      Object.keys(courseCredits).forEach((course) => {
-        const option = document.createElement("option");
-        option.value = course;
-        datalist.appendChild(option);
-      });
-      document.body.appendChild(datalist);
-    }
+    // ensure datalist exists
+    ensureCourseDatalist(courseCredits);
 
-    // Remove a course when click remove button
-    const removeButton = newDiv.querySelector(".remove-btn");
-    removeButton.addEventListener("click", () => {
-      newDiv.remove();
-      updateResult();
-    });
+    newDiv.querySelector(".remove-btn")
+      .addEventListener("click", () => {
+        newDiv.remove();
+        updateResult();
+      });
 
     const gradeInput = newDiv.querySelector(".grade");
     const courseNameInput = newDiv.querySelector(".course-name");
@@ -106,54 +101,132 @@ document.addEventListener("DOMContentLoaded", function () {
     gradeInput.addEventListener("change", updateResult);
 
     courseNameInput.addEventListener("input", () => {
-      const courseName = courseNameInput.value.toUpperCase();
-      if (courseCredits[courseName]) {
-        creditsInput.value = courseCredits[courseName];
-      }
+      const name = courseNameInput.value.toUpperCase();
+      if (courseCredits[name]) creditsInput.value = courseCredits[name];
       updateResult();
     });
 
     creditsInput.addEventListener("input", updateResult);
   }
+
+  // Restore saved courses and GPA
+  function loadFromStorage() {
+    const savedCourses = JSON.parse(localStorage.getItem("courses") || "[]");
+    const savedPrevGPA = localStorage.getItem("prevGPA") || "";
+    const savedPrevCredits = localStorage.getItem("prevCredits") || "";
+
+    prevGPAElm.value = savedPrevGPA;
+    prevCredits.value = savedPrevCredits;
+    coursesDiv.innerHTML = "";
+
+    savedCourses.forEach((course) => {
+      const newDiv = document.createElement("div");
+      newDiv.classList.add("course");
+      newDiv.innerHTML = `
+        <input type="text" list="courses_name" class="course-name" placeholder="Course" value="${course.name}">
+        <input type="number" class="credits-input" min="1" step="1" placeholder="Credits" value="${course.credits}">
+        <select class="grade">
+          <option value="" disabled>Grade</option>
+          <option value="4.00">A+</option>
+          <option value="3.75">A</option>
+          <option value="3.50">B+</option>
+          <option value="3.00">B</option>
+          <option value="2.50">C+</option>
+          <option value="2.00">C</option>
+          <option value="1.50">D+</option>
+          <option value="1.00">D</option>
+          <option value="0.00">F</option>
+        </select>
+        <button type="button" class="remove-btn">×</button>`;
+
+      coursesDiv.appendChild(newDiv);
+
+
+      ensureCourseDatalist(courseCredits);
+
+      const gradeInput = newDiv.querySelector(".grade");
+      const courseNameInput = newDiv.querySelector(".course-name");
+      const creditsInput = newDiv.querySelector(".credits-input");
+      const removeButton = newDiv.querySelector(".remove-btn");
+
+      gradeInput.value = course.grade;
+      gradeInput.addEventListener("change", updateResult);
+
+      courseNameInput.addEventListener("input", () => {
+        const name = courseNameInput.value.toUpperCase();
+        if (courseCredits[name]) creditsInput.value = courseCredits[name];
+        updateResult();
+      });
+
+      creditsInput.addEventListener("input", updateResult);
+      removeButton.addEventListener("click", () => {
+        newDiv.remove();
+        updateResult();
+      });
+    });
+
+    if (savedCourses.length === 0) {
+      addCourse();
+    }
+
+    updateResult();
+  }
   
-  //update Result automatically
+  // updates and saves all course data to localStorage.
   function updateResult() {
-    const prevGPAInput = document.getElementById("prevGPA");
-    const prevCreditsInput = document.getElementById("prevCredits");
-
-    const prevGPAValue = parseFloat(prevGPAInput.value) || 0;
-    const prevCreditsValue = parseFloat(prevCreditsInput.value) || 0;
+    const prevGPAValue = parseFloat(prevGPAElm.value) || 0;
+    const prevCreditsValue = parseFloat(prevCredits.value) || 0;
     const prevPoints = prevGPAValue * prevCreditsValue;
+    let newPoints = 0, newCredits = 0;
+    const courseData = [];
 
-    let newPoints = 0;
-    let newCredits = 0;
+    // Validate inputs
+    if (prevGPAElm.value > 4) {
+      prevGPAElm.setCustomValidity("GPA cannot be more than 4.00");
+      prevGPAElm.reportValidity();
+      return;
+    } else {
+      prevGPAElm.setCustomValidity("");
+    }
+    if (prevCredits.value > 200) {
+      prevCredits.setCustomValidity("Credits cannot be more than 200");
+      prevCredits.reportValidity();
+      return;
+    }
 
-    document.querySelectorAll(".course").forEach((course) => {
-      const credits = parseFloat(course.querySelector(".credits-input").value);
-      const grade = parseFloat(course.querySelector(".grade").value);
+    document.querySelectorAll(".course").forEach((courseEl) => {
+      const credits = parseFloat(courseEl.querySelector(".credits-input").value);
+      const grade = parseFloat(courseEl.querySelector(".grade").value);
+      const name = courseEl.querySelector(".course-name").value;
 
-      if (
-        !isNaN(credits) &&
-        !isNaN(grade) &&
-        credits > 0 &&
-        gradeSelect.value !== ""
-      ) {
+      if (!isNaN(credits) && !isNaN(grade) && credits > 0) {
         newPoints += credits * grade;
         newCredits += credits;
       }
+      courseData.push({ name, credits: courseEl.querySelector(".credits-input").value, grade: courseEl.querySelector(".grade").value });
     });
 
-    const newGPA =
-      newCredits > 0 ? (newPoints / newCredits).toFixed(2) : "0.00";
+    // Save back to localStorage
+    localStorage.setItem("courses", JSON.stringify(courseData));
+    localStorage.setItem("prevGPA", prevGPAElm.value);
+    localStorage.setItem("prevCredits", prevCredits.value);
 
+    const newGPA = newCredits > 0 ? (newPoints / newCredits).toFixed(2) : "0.00";
     const totalPoints = prevPoints + newPoints;
     const totalCredits = prevCreditsValue + newCredits;
-
-    const combinedGPAValue =
-      totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
+    const combinedGPA = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
 
     totalCreditsEl.textContent = totalCredits;
     gpaValueEl.textContent = newGPA;
-    combinedGPAEl.textContent = combinedGPAValue;
+    combinedGPAEl.textContent = combinedGPA;
   }
+
+
+  loadFromStorage();
+  addButton.addEventListener("click", addCourse);
+  removeAllButton.addEventListener("click", () => {
+    coursesDiv.innerHTML = "";
+    updateResult();
+    addCourse();
+  });
 });
